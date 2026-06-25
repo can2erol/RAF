@@ -52,3 +52,23 @@ print(finals["next.reward"].describe())
 print("\nFinal rewards for success episodes:")
 print(finals[finals["next.success"]]["next.reward"].describe())
 print(finals[~finals["next.success"]]["next.reward"].describe())
+
+# Check the 206 episodes for degenerate runs
+ep_lengths = df.groupby("episode_index")["frame_index"].count()
+print("\nEpisode length stats:")
+print(ep_lengths.describe())
+print("Shortest 5 episodes (frames):")
+print(ep_lengths.nsmallest(5))
+
+# Does reward ever go backward a lot within an episode? (sign of messy run)
+def max_reward_drop(g):
+    r = g.sort_values("frame_index")["next.reward"].values
+    # biggest single drop from a running peak
+    peak = np.maximum.accumulate(r)
+    return (peak - r).max()
+
+drops = df.groupby("episode_index").apply(max_reward_drop)
+print("\nLargest within-episode reward drop, distribution:")
+print(drops.describe())
+print("Episodes with the biggest reward reversals:")
+print(drops.nlargest(5))
