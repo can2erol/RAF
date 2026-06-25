@@ -72,3 +72,28 @@ print("\nLargest within-episode reward drop, distribution:")
 print(drops.describe())
 print("Episodes with the biggest reward reversals:")
 print(drops.nlargest(5))
+
+
+def corrupt_episode_swap(target_df, donor_df, t, seed=0):
+    """
+    Corrupt target's actions from frame t onward by splicing in donor's actions.
+    Every spliced actions is a real action from a real successful episode, so
+    there is no per-action statistical tell - only wrong in context.
+    """
+    tgt = target_df.sort_values("frame_index").reset_index(drop=True).copy()
+    don = donor_df.sort_values("frame_index").reset_index(drop=True)
+
+    tgt_actions = np.stack(tgt["action"].values)
+    don_actions = np.stack(don["action"].values)
+
+    n_need = len(tgt_actions) - t
+    if len(don_actions) < n_need:
+        raise ValueError(
+            f"Donor too short."
+        )
+
+    # Splice: from frame t on, target executes the donor's actions
+    tgt_acions[t:] = don_actions[:n_need]
+
+    tgt["action"] = list(tgt_actions)
+    return tgt, t
